@@ -2,7 +2,7 @@
 
 `phasis-srna-da` is a reusable command-line workflow for counting processed small-RNA libraries against a fixed reference and testing relative differential abundance. This tutorial explains how to use your own dataset and provides **B73 WT/ms28 anthers as a worked example**. The ms28 example is distinct from the anther-primordia spatial dataset.
 
-**Start with [software setup on Hive](phasis_srna_da_setup.md).** That guide covers obtaining the source, creating a separate Python environment, loading Bowtie 1, and checking the installation. It also includes an optional `srun` example for users who do not already have a compute shell.
+**Start with [software setup on Hive](phasis_srna_da_setup.md).** It installs the tool in one Conda environment and loads Bowtie 1.
 
 The analysis below starts **inside an existing `srun` compute-node shell**. You run each stage yourself: **prepare inputs → validate → count → review QC → DA → inspect results**. No step submits another job automatically.
 
@@ -75,13 +75,13 @@ If you continued directly from the [setup guide](phasis_srna_da_setup.md), these
 ```bash
 export SRNA_HOME="/quobyte/bcmeyersgrp/$USER/srna-da"
 export SRNA_CODE="$SRNA_HOME/software/phasis-srna-da"
-export SRNA_ENV="$SRNA_HOME/envs/phasis-srna-da"
-export SRNA_PYTHON="$SRNA_ENV/bin/python"
+export SRNA_ENV="$SRNA_HOME/conda/phasis-srna-da"
 source /etc/profile.d/modules.sh
-module load python/3.11.9 bowtie/1.3.1
+module load conda bowtie/1.3.1
+conda activate "$SRNA_ENV"
 hostname
 printf 'Job: %s\nThreads: %s\n' "${SLURM_JOB_ID:-unset}" "${SLURM_CPUS_PER_TASK:-1}"
-"$SRNA_PYTHON" -m phasis_srna_da --version
+phasis-srna-da --version
 ```
 
 Change the group-storage prefix if needed. `$USER` is appropriate for **your own workspace**. Shared libraries and frozen references may belong to another owner: use their actual supplied paths rather than replacing the owner's name with `$USER`.
@@ -140,9 +140,9 @@ Edit `SRNA_EXAMPLE_ROOT` in the copied file to your example location. The layout
 | Mandatory Phasis products | `phasiRNAs/` |
 | Exploratory PHAS-like FASTAs | `candidate_fasta/` |
 
-These data are supplied separately from the software. Follow the [data-download guide](phasis_srna_da_downloads.md) for the public B73v5 annotation. That annotation download alone does not provide all inputs for this example: the exact molecule-oriented Phasis products, candidate FASTAs, processed libraries, and target sheet must also be supplied and verified. Other result/report packages on Drive do not replace a tutorial input bundle.
+These data are supplied separately from the software. Follow the [data-download guide](phasis_srna_da_downloads.md) for the public B73v5 reference bundle. The processed libraries and target sheet are supplied separately and must be verified before use. Other result/report packages do not replace the tutorial input bundle.
 
-The example root may be a shared directory; the analysis reads it without rewriting the reference or libraries. If the lab distributes a differently organized bundle, edit the individual paths in your configuration. In particular, a downloaded annotation root has `fasta/` directly beneath it; set `SRNA_REFERENCE` to that directory rather than assuming it has the repository's `results/reference_packages/` layout. Preserve the other input paths separately.
+The example root may be a shared directory; the analysis reads it without rewriting the reference or libraries. If the lab distributes a differently organized bundle, edit the individual paths in your configuration. Preserve the reference and library inputs separately.
 
 The template retains 18–50 nt, discards N-containing records, and includes miRNA, tRNA, rRNA, snRNA, snoRNA, 21-/24-nt phasiRNA, unsupported MIR candidates, and 21-/24-PHAS-like candidates. Candidate labels remain exploratory. The frozen assembly is `Zm-B73-REFERENCE-NAM-5.0`; the annotation identity is `B73v5_curated_sRNA_reference_v1_2026-08-27__PHAS_molecule_oriented_v1_2026-08-30`.
 
@@ -172,8 +172,8 @@ cp "$SRNA_STUDY/analysis_config.sh" "$SRNA_RUN/analysis_config.sh"
 source "$SRNA_RUN/analysis_config.sh"
 set -o pipefail
 
-"$SRNA_PYTHON" -m pip freeze > "$SRNA_RUN/python_packages.txt"
-"$SRNA_PYTHON" -m phasis_srna_da --version > "$SRNA_RUN/cli_version.txt"
+python -m pip freeze > "$SRNA_RUN/python_packages.txt"
+phasis-srna-da --version > "$SRNA_RUN/cli_version.txt"
 bowtie --version > "$SRNA_RUN/bowtie_version.txt"
 sha256sum "$SRNA_RUN/analysis_config.sh" "$SRNA_CODE/pyproject.toml" \
   "$SRNA_CODE"/src/phasis_srna_da/*.py > "$SRNA_RUN/software_and_config.sha256"
@@ -184,7 +184,7 @@ Choose an unused run name. If `mkdir "$SRNA_RUN"` reports that it exists, stop a
 ## 5. Validate the inputs
 
 ```bash
-"$SRNA_PYTHON" -m phasis_srna_da validate \
+phasis-srna-da validate \
   "${SRNA_INPUT_ARGS[@]}" --json \
   > "$SRNA_RUN/validation.json" 2> "$SRNA_RUN/logs/validation.err"
 ```
@@ -202,7 +202,7 @@ Validation reads the complete libraries but does not map them or fit DA models. 
 ## 6. Count against the fixed reference
 
 ```bash
-"$SRNA_PYTHON" -m phasis_srna_da run \
+phasis-srna-da run \
   "${SRNA_INPUT_ARGS[@]}" \
   --threads "${SLURM_CPUS_PER_TASK:-1}" \
   --outdir "$SRNA_RUN/counts_run" \
@@ -240,7 +240,7 @@ These are different resolutions of the same reads. A locus summary does not meas
 ## 7. Run the declared differential-abundance comparisons
 
 ```bash
-"$SRNA_PYTHON" -m phasis_srna_da da \
+phasis-srna-da da \
   --count-run "$SRNA_RUN/counts_run" \
   "${SRNA_DA_ARGS[@]}" \
   --threads "${SLURM_CPUS_PER_TASK:-1}" \
@@ -277,7 +277,7 @@ For a custom study, expect one result table per declared contrast **for each fit
 Before treating a result as current, check that source inputs still match the hashes recorded during counting. Run this in the compute session:
 
 ```bash
-"$SRNA_PYTHON" - "$SRNA_RUN/counts_run/provenance/input_manifest.tsv" <<'PY'
+python - "$SRNA_RUN/counts_run/provenance/input_manifest.tsv" <<'PY'
 import csv
 from pathlib import Path
 import sys
