@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "Please cite the software version and commit used in your analysis."
+title: "phasis-srna-da"
+type: software
+authors:
+  - name: "phasis-srna-da contributors"
+version: 0.2.0.dev0
+date-released: 2026-09-30
+repository-code: "https://github.com/thalescherubino/phasis-srna-da"
+license: MIT

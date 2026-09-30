@@ -1,0 +1,13 @@
+sample_id	condition	biological_replicate	library_id	batch	technical_replicate
+Epi_1	Epi	1	Epi_1
+Epi_2	Epi	2	Epi_2
+Epi_3	Epi	3	Epi_3
+Lobe_1	Lobe	1	lobe_1
+Lobe_2	Lobe	2	lobe_2
+Lobe_3	Lobe	3	lobe_3
+AR_1	AR-region	1	AR_1
+AR_2	AR-region	2	AR_2
+AR_3	AR-region	3	AR_3
+Vas_1	Vas	1	Vas_1
+Vas_2	Vas	2	Vas_2
+Vas_3	Vas	3	Vas_3

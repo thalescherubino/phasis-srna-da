@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phasis-srna-da"
+version = "0.2.0.dev0"
+description = "Conservative downstream differential-accumulation preparation for quality-controlled small-RNA FASTQ or collapsed-tag libraries"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+  {name = "Maize Anther Primordia Spatial Small-RNA Analysis"},
+]
+dependencies = [
+  "pandas>=2.0",
+]
+
+[project.optional-dependencies]
+da = [
+  "numpy>=1.24",
+  "pydeseq2>=0.5,<0.6",
+]
+dev = [
+  "pytest>=8",
+]
+
+[project.scripts]
+phasis-srna-da = "phasis_srna_da.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
